@@ -1,5 +1,5 @@
 /* ============================================================
-   ui.js — rendering the shelf, the catalog and the detail sheet.
+   ui.js — rendering the shelf, the catalogue and the detail sheet.
    ============================================================ */
 
 var UI = (function () {
@@ -7,6 +7,8 @@ var UI = (function () {
   var hooks = {};                    // filled in by app.js
   var toastTimer = null;
   var openId = null;
+  var collection = 'owned';          // 'owned' | 'wishlist'
+  var layout = 'grid';               // catalogue: 'grid' | 'list'
 
   function el(id) { return document.getElementById(id); }
 
@@ -26,7 +28,19 @@ var UI = (function () {
     toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
   }
 
-  /* ── views ──────────────────────────────────────────────────── */
+  /* ── collections & views ────────────────────────────────────── */
+
+  function setCollection(name) {
+    collection = name === 'wishlist' ? 'wishlist' : 'owned';
+    el('coll-owned').classList.toggle('is-active', collection === 'owned');
+    el('coll-wishlist').classList.toggle('is-active', collection === 'wishlist');
+    el('coll-owned').setAttribute('aria-selected', String(collection === 'owned'));
+    el('coll-wishlist').setAttribute('aria-selected', String(collection === 'wishlist'));
+    try { localStorage.setItem('bookshelf.collection', collection); } catch (e) {}
+    renderAll();
+  }
+
+  function getCollection() { return collection; }
 
   function setView(name) {
     var shelf = name !== 'list';
@@ -42,39 +56,77 @@ var UI = (function () {
     try { localStorage.setItem('bookshelf.view', shelf ? 'shelf' : 'list'); } catch (e) {}
   }
 
+  function setLayout(name) {
+    layout = name === 'list' ? 'list' : 'grid';
+    el('catalog').classList.toggle('is-grid', layout === 'grid');
+    el('btn-layout').classList.toggle('showing-list', layout === 'list');
+    try { localStorage.setItem('bookshelf.layout', layout); } catch (e) {}
+    renderCatalog();
+  }
+
+  function toggleLayout() { setLayout(layout === 'grid' ? 'list' : 'grid'); }
+
   function renderStats() {
-    var books = Store.all();
-    var pages = Store.totalPages();
+    var books = Store.all(collection);
+    var pages = Store.totalPages(collection);
     var s = el('stats');
-    if (!books.length) { s.textContent = 'No books yet'; return; }
+    if (!books.length) {
+      s.textContent = collection === 'wishlist' ? 'Nothing on the wishlist yet' : 'No books yet';
+      return;
+    }
     var bits = [books.length + (books.length === 1 ? ' book' : ' books')];
     if (pages > 0) bits.push(pages.toLocaleString() + ' pages');
-    var read = books.filter(function (b) { return b.status === 'read'; }).length;
-    if (read) bits.push(read + ' read');
+    if (collection === 'owned') {
+      var read = books.filter(function (b) { return b.status === 'read'; }).length;
+      if (read) bits.push(read + ' read');
+    }
     s.textContent = bits.join('  ·  ');
   }
 
+  /* ── shelf ──────────────────────────────────────────────────── */
+
   function renderShelf() {
     var wrap = el('shelf-wrap');
-    var books = Store.all();
-    el('empty-shelf').hidden = books.length > 0;
-    el('shelf-wrap').parentNode.hidden = books.length === 0;
+    var items = Store.shelfItems(collection);
+    var hasBooks = Store.count(collection) > 0;
+    var anything = items.length > 0;
 
-    wrap.innerHTML = books.map(function (b) {
-      var c = Store.color(b);
-      var pale = Store.isPale(c) ? ' is-pale' : '';
-      var ribbon = b.status === 'reading' ? '<span class="ribbon"></span>' : '';
-      var lay = spineText(b);
-      return '<button class="book" data-id="' + b.id + '" style="--w:' + b.widthPx + 'px;--h:' + b.heightPx + 'px;--c:' + c + '"' +
-             ' aria-label="' + esc(b.title + (lay.fullAuthor ? ', ' + lay.fullAuthor : '')) + '">' +
-               '<span class="spine' + pale + '">' + ribbon +
-                 '<span class="spine-text">' +
-                   '<span class="spine-title" style="font-size:' + lay.size + 'px">' + esc(lay.title) + '</span>' +
-                   (lay.author ? '<span class="spine-author" style="font-size:' + lay.authorSize + 'px">' + esc(lay.author) + '</span>' : '') +
-                 '</span>' +
-               '</span>' +
-             '</button>';
+    el('empty-shelf').hidden = hasBooks;
+    el('shelf-wrap').parentNode.hidden = !anything;
+    el('btn-decorate').hidden = !anything;
+
+    if (!hasBooks) {
+      el('empty-shelf').innerHTML = collection === 'wishlist'
+        ? '<h2>Nothing on the wishlist</h2><p>Scan a book in a shop and tap <strong>Want to read</strong> to remember it.</p>'
+        : '<h2>Your shelf is empty</h2><p>Tap <strong>Scan</strong> and point the camera at the barcode on the back of a book.</p>';
+    }
+
+    wrap.innerHTML = items.map(function (it) {
+      return it.kind === 'book' ? bookSpine(it.book) : ornament(it.decor);
     }).join('');
+  }
+
+  function bookSpine(b) {
+    var c = Store.color(b);
+    var pale = Store.isPale(c) ? ' is-pale' : '';
+    var ribbon = b.status === 'reading' ? '<span class="ribbon"></span>' : '';
+    var lay = spineText(b);
+    return '<button class="book" data-id="' + b.id + '" style="--w:' + b.widthPx + 'px;--h:' + b.heightPx + 'px;--c:' + c + '"' +
+           ' aria-label="' + esc(b.title + (lay.fullAuthor ? ', ' + lay.fullAuthor : '')) + '">' +
+             '<span class="spine' + pale + '">' + ribbon +
+               '<span class="spine-text">' +
+                 '<span class="spine-title" style="font-size:' + lay.size + 'px">' + esc(lay.title) + '</span>' +
+                 (lay.author ? '<span class="spine-author" style="font-size:' + lay.authorSize + 'px">' + esc(lay.author) + '</span>' : '') +
+               '</span>' +
+             '</span>' +
+           '</button>';
+  }
+
+  function ornament(d) {
+    var kind = Decor.get(d.kind);
+    if (!kind) return '';
+    return '<button class="decor" data-decor="' + d.id + '" style="--w:' + kind.w + 'px;--h:' + kind.h + 'px"' +
+           ' aria-label="' + esc(kind.label) + '">' + kind.svg + '</button>';
   }
 
   /* Measure the actual type rather than guessing at character widths.
@@ -114,8 +166,6 @@ var UI = (function () {
     var title = fitText(b.title, size, '600', room);
     var used = textWidth(title, size, '600');
 
-    /* The author gets its own column beside the title, so it needs
-       width on the spine as well as length left over. */
     var author = '', authorSize = 9;
     if (full && b.widthPx >= 34 && room - used > 34) {
       author = fitText(full, authorSize, '400', room - 4);
@@ -123,6 +173,8 @@ var UI = (function () {
 
     return { title: title, size: size, author: author, authorSize: authorSize, fullAuthor: full };
   }
+
+  /* ── catalogue ──────────────────────────────────────────────── */
 
   function sortBooks(list, mode) {
     var out = list.slice();
@@ -151,7 +203,7 @@ var UI = (function () {
   function renderCatalog() {
     var q = el('search').value.trim().toLowerCase();
     var mode = el('sort').value;
-    var books = Store.all();
+    var books = Store.all(collection);
 
     var shown = books.filter(function (b) {
       if (!q) return true;
@@ -161,31 +213,63 @@ var UI = (function () {
     });
     shown = sortBooks(shown, mode);
 
-    el('empty-list').hidden = shown.length > 0 || books.length === 0;
     if (!books.length) {
       el('catalog').innerHTML = '';
       el('empty-list').hidden = false;
-      el('empty-list').innerHTML = '<h2>Nothing catalogued</h2><p>Scan a book and it will appear here.</p>';
+      el('empty-list').innerHTML = collection === 'wishlist'
+        ? '<h2>Nothing on the wishlist</h2><p>Books you want will be listed here.</p>'
+        : '<h2>Nothing catalogued</h2><p>Scan a book and it will appear here.</p>';
       return;
     }
+    el('empty-list').hidden = shown.length > 0;
     el('empty-list').innerHTML = '<h2>Nothing here</h2><p>No books match that search.</p>';
 
-    el('catalog').innerHTML = shown.map(function (b) {
-      var meta = [];
-      if (b.year) meta.push(b.year);
-      if (b.publisher) meta.push(b.publisher);
-      if (b.pages) meta.push(b.pages + ' pp.');
-      var pill = b.status === 'read' ? '<span class="pill read">Read</span>'
-               : b.status === 'reading' ? '<span class="pill reading">Reading</span>' : '';
-      return '<li><button class="entry" data-id="' + b.id + '" style="--c:' + Store.color(b) + '">' +
-               '<span class="entry-chip"></span>' +
-               '<span class="entry-main">' +
-                 '<span class="entry-title">' + esc(b.title) + '</span>' +
-                 '<span class="entry-author">' + esc(authorsOf(b) || 'Unknown author') + '</span>' +
-                 (meta.length ? '<span class="entry-meta">' + esc(meta.join(' · ')) + '</span>' : '') +
-               '</span>' + pill +
-             '</button></li>';
-    }).join('');
+    el('catalog').innerHTML = shown.map(layout === 'grid' ? coverCard : listRow).join('');
+  }
+
+  /* A real cover when one exists, otherwise a drawn one in the book's
+     own cloth colour — the grid stays even either way. */
+  function coverCard(b) {
+    var url = Store.coverUrl(b);
+    var c = Store.color(b);
+    var pale = Store.isPale(c) ? ' is-pale' : '';
+    var author = authorsOf(b);
+
+    var art = '<span class="cover-drawn' + pale + '">' +
+                '<span class="cover-title">' + esc(b.title) + '</span>' +
+                (author ? '<span class="cover-author">' + esc(author) + '</span>' : '') +
+              '</span>';
+
+    /* The drawn cover sits underneath; a real image simply covers it,
+       and removes itself if the fetch fails. */
+    var img = url ? '<img src="' + esc(url) + '" alt="" loading="lazy" ' +
+                    'onerror="this.remove()">' : '';
+
+    var badge = b.status === 'read' ? '<span class="cover-badge read">Read</span>'
+              : b.status === 'reading' ? '<span class="cover-badge reading">Reading</span>' : '';
+
+    return '<li><button class="card" data-id="' + b.id + '" style="--c:' + c + '">' +
+             '<span class="cover">' + art + img + badge + '</span>' +
+             '<span class="card-title">' + esc(b.title) + '</span>' +
+             '<span class="card-author">' + esc(author || 'Unknown author') + '</span>' +
+           '</button></li>';
+  }
+
+  function listRow(b) {
+    var meta = [];
+    if (b.year) meta.push(b.year);
+    if (b.publisher) meta.push(b.publisher);
+    if (b.pages) meta.push(b.pages + ' pp.');
+    var pill = b.status === 'read' ? '<span class="pill read">Read</span>'
+             : b.status === 'reading' ? '<span class="pill reading">Reading</span>' : '';
+    return '<li><button class="entry" data-id="' + b.id + '" style="--c:' + Store.color(b) + '">' +
+             '<span class="entry-chip"></span>' +
+             '<span class="entry-main">' +
+               '<span class="entry-title">' + esc(b.title) + '</span>' +
+               '<span class="entry-author">' + esc(authorsOf(b) || 'Unknown author') + '</span>' +
+               (meta.length ? '<span class="entry-meta">' + esc(meta.join(' · ')) + '</span>' : '') +
+             '</span>' + pill +
+           '</button></li>';
   }
 
   function renderAll() {
@@ -209,10 +293,13 @@ var UI = (function () {
 
     var subjects = (b.subjects || []).slice(0, 4).join(', ');
     var added = new Date(b.addedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    var url = Store.coverUrl(b);
 
     var html =
       '<div class="detail-head">' +
-        '<div class="detail-spine" style="--c:' + Store.color(b) + '"></div>' +
+        (url
+          ? '<img class="detail-cover" src="' + esc(url) + '" alt="" onerror="this.className=\'detail-spine\';this.removeAttribute(\'src\')" style="--c:' + Store.color(b) + '">'
+          : '<div class="detail-spine" style="--c:' + Store.color(b) + '"></div>') +
         '<div>' +
           '<h2 class="detail-title">' + esc(b.title) + '</h2>' +
           (b.subtitle ? '<p class="detail-sub">' + esc(b.subtitle) + '</p>' : '') +
@@ -227,6 +314,12 @@ var UI = (function () {
         fact('Subjects', subjects) +
         fact('Added', added) +
       '</ul>' +
+
+      '<p class="sec-label">Collection</p>' +
+      '<div class="chips" id="d-list">' +
+        chip('owned', 'I have it', b.list || 'owned') +
+        chip('wishlist', 'Want to read', b.list || 'owned') +
+      '</div>' +
 
       '<p class="sec-label">Status</p>' +
       '<div class="chips" id="d-status">' +
@@ -261,6 +354,7 @@ var UI = (function () {
       '<button class="btn danger" id="d-delete">Remove</button>' +
       '<button class="btn" id="d-edit">Edit details</button>' +
       '<button class="btn primary" id="d-close">Done</button>';
+
     el('sheet').hidden = false;
     el('sheet-backdrop').hidden = false;
     el('sheet-body').scrollTop = 0;
@@ -272,6 +366,15 @@ var UI = (function () {
   }
 
   function wireDetail(b) {
+    el('d-list').addEventListener('click', function (e) {
+      var btn = e.target.closest('.chip');
+      if (!btn) return;
+      Store.update(b.id, { list: btn.dataset.v });
+      [].forEach.call(this.children, function (c) { c.classList.toggle('is-on', c === btn); });
+      renderAll();
+      toast(btn.dataset.v === 'wishlist' ? 'Moved to Want to Read' : 'Moved to My Books');
+    });
+
     el('d-status').addEventListener('click', function (e) {
       var btn = e.target.closest('.chip');
       if (!btn) return;
@@ -296,7 +399,8 @@ var UI = (function () {
       var i = +btn.dataset.i;
       Store.update(b.id, { colorIndex: i });
       [].forEach.call(this.children, function (c) { c.classList.toggle('is-on', c === btn); });
-      el('sheet-body').querySelector('.detail-spine').style.setProperty('--c', Store.PALETTE[i]);
+      var spine = el('sheet-body').querySelector('.detail-spine');
+      if (spine) spine.style.setProperty('--c', Store.PALETTE[i]);
       renderAll();
     });
 
@@ -327,7 +431,9 @@ var UI = (function () {
   }
 
   return {
-    hooks: hooks, el: el, esc: esc, toast: toast, setView: setView,
+    hooks: hooks, el: el, esc: esc, toast: toast,
+    setView: setView, setCollection: setCollection, getCollection: getCollection,
+    setLayout: setLayout, toggleLayout: toggleLayout,
     renderAll: renderAll, renderCatalog: renderCatalog,
     openDetail: openDetail, closeSheet: closeSheet, authorsOf: authorsOf
   };

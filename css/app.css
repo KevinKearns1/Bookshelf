@@ -100,6 +100,19 @@ button { cursor: pointer; }
 
 .stats { margin: 2px 0 12px; color: var(--muted); font-size: 13px; }
 
+/* Which pile you are looking at: books you own, or books you want. */
+.collections { display: flex; gap: 18px; margin-top: 6px; }
+.coll {
+  border: 0;
+  background: transparent;
+  padding: 2px 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+.coll.is-active { color: var(--ink); border-bottom-color: var(--plank); }
+
 .icon-btn {
   width: 38px; height: 38px;
   display: grid; place-items: center;
@@ -255,6 +268,67 @@ button { cursor: pointer; }
   box-shadow: 0 1px 3px rgba(0,0,0,.4);
 }
 
+/* ── Ornaments ──────────────────────────────────────────────── */
+
+.decor {
+  flex: 0 0 auto;
+  height: var(--shelf-row);
+  padding: 0 3px var(--plank-h);
+  display: flex;
+  align-items: flex-end;
+  border: 0;
+  background: transparent;
+}
+.decor svg {
+  width: var(--w);
+  height: var(--h);
+  stroke: none;
+  fill: none;
+  filter: drop-shadow(0 4px 5px rgba(0,0,0,.4));
+  transition: transform .16s ease;
+}
+.decor:active svg { transform: translateY(-5px); }
+
+.decorate-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px auto 0;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow-1);
+}
+.decorate-btn svg { width: 16px; height: 16px; fill: var(--gold); stroke: none; }
+
+.decor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.decor-option {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-radius: 12px;
+  padding: 10px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.decor-option:active { background: var(--line); }
+.decor-art { height: 56px; display: flex; align-items: flex-end; }
+.decor-art svg { height: 56px; width: auto; fill: none; stroke: none; }
+.decor-label { font-size: 12px; color: var(--muted); }
+
+.decor-preview { display: flex; justify-content: center; padding: 8px 0 16px; }
+.decor-preview svg { height: 92px; width: auto; stroke: none; fill: none; }
+
 /* ── Empty states ───────────────────────────────────────────── */
 
 .empty { text-align: center; padding: 44px 34px; color: var(--muted); }
@@ -298,7 +372,107 @@ button { cursor: pointer; }
   max-width: 42vw;
 }
 
+.layout-toggle { flex: none; border: 1px solid var(--line); border-radius: 10px; width: 40px; height: 40px; }
+.layout-toggle svg { fill: none; stroke: currentColor; width: 19px; height: 19px; }
+.layout-toggle .ico-list { display: none; }
+.layout-toggle.showing-list .ico-grid { display: none; }
+.layout-toggle.showing-list .ico-list { display: block; }
+
 .catalog { list-style: none; margin: 0; padding: 0 16px; }
+
+/* ── Catalogue: covers ──────────────────────────────────────── */
+
+.catalog.is-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 14px;
+}
+@media (min-width: 560px) { .catalog.is-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 860px) { .catalog.is-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.card {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: center;
+}
+.card:active { opacity: .82; }
+
+.cover {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 4px 7px 7px 4px;
+  overflow: hidden;
+  background: var(--c);
+  box-shadow: 0 6px 14px rgba(43,33,24,.28), inset 3px 0 0 rgba(0,0,0,.22);
+}
+.cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Sits beneath any real cover art; if the image 404s it removes
+   itself and this shows through. */
+.cover-drawn {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 12px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.cover-drawn.is-pale { color: #23180E; text-shadow: 0 1px 0 rgba(255,255,255,.3); }
+.cover-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cover-author { font-size: 11px; opacity: .85; }
+
+.cover-badge {
+  position: absolute;
+  top: 8px; right: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(20,14,8,.72);
+  color: #F6EFE3;
+  backdrop-filter: blur(3px);
+}
+.cover-badge.read { background: rgba(47,107,80,.9); }
+.cover-badge.reading { background: rgba(176,132,47,.92); }
+
+.card-title {
+  display: block;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 14px;
+  line-height: 1.3;
+  margin-top: 9px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.card-author { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 .entry {
   display: flex;
@@ -521,6 +695,16 @@ button { cursor: pointer; }
 }
 
 .detail-head { display: flex; gap: 16px; margin-bottom: 16px; }
+.detail-cover {
+  width: 92px;
+  flex: none;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 3px 6px 6px 3px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.32);
+  background: var(--c);
+}
+
 .detail-spine {
   width: 52px; height: 132px; flex: none;
   border-radius: 4px;

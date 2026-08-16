@@ -76,6 +76,7 @@ var Lookup = (function () {
         year: yearOf(rec.publish_date),
         pages: rec.number_of_pages || 0,
         subjects: (rec.subjects || []).map(function (s) { return s.name; }),
+        cover: (rec.cover && (rec.cover.medium || rec.cover.large || rec.cover.small)) || '',
         source: 'openlibrary'
       };
     });
@@ -96,6 +97,10 @@ var Lookup = (function () {
         year: yearOf(v.publishedDate),
         pages: v.pageCount || 0,
         subjects: v.categories || [],
+        /* Google hands these out over http, which a page served on
+           https will refuse to load. */
+        cover: ((v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail)) || '')
+          .replace(/^http:/, 'https:'),
         source: 'googlebooks'
       };
     });

@@ -24,6 +24,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
     </button>
   </div>
+  <div class="collections" role="tablist" aria-label="Collection">
+    <button class="coll is-active" id="coll-owned" role="tab" aria-selected="true">My Books</button>
+    <button class="coll" id="coll-wishlist" role="tab" aria-selected="false">Want to Read</button>
+  </div>
   <p class="stats" id="stats">No books yet</p>
   <div class="segmented" role="tablist" aria-label="View">
     <button class="seg is-active" id="tab-shelf" role="tab" aria-selected="true">Shelf</button>
@@ -38,6 +42,10 @@
     <div class="bookcase">
       <div class="shelf-wrap" id="shelf-wrap"></div>
     </div>
+    <button class="decorate-btn" id="btn-decorate">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 4.3 4.6.5-3.4 3.2.9 4.6L12 13.4 8 15.6l.9-4.6L5.5 7.8l4.6-.5z"/></svg>
+      Decorate
+    </button>
     <div class="empty" id="empty-shelf" hidden>
       <svg viewBox="0 0 120 90" class="empty-art" aria-hidden="true">
         <rect x="14" y="20" width="14" height="52" rx="2"/>
@@ -65,8 +73,12 @@
         <option value="year">Year (newest)</option>
         <option value="pages">Longest</option>
       </select>
+      <button class="icon-btn layout-toggle" id="btn-layout" aria-label="Switch between covers and list" title="Covers or list">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-grid"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-list"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
     </div>
-    <ol class="catalog" id="catalog"></ol>
+    <ol class="catalog is-grid" id="catalog"></ol>
     <div class="empty" id="empty-list" hidden>
       <h2>Nothing here</h2>
       <p>No books match that search.</p>
@@ -115,8 +127,9 @@
       </div>
     </div>
     <div class="result-actions">
-      <button class="btn ghost" id="btn-scan-again">Scan another</button>
-      <button class="btn primary" id="btn-add">Add to shelf</button>
+      <button class="btn ghost" id="btn-scan-again">Skip</button>
+      <button class="btn" id="btn-add-wish">Want to read</button>
+      <button class="btn primary" id="btn-add">I have it</button>
     </div>
   </div>
 </div>
@@ -128,6 +141,36 @@
   <div class="sheet-scroll" id="sheet-body"></div>
   <div class="detail-actions" id="sheet-actions"></div>
 </section>
+
+<!-- ── Decoration picker ──────────────────────────────────────── -->
+<div class="modal" id="modal-decor" hidden>
+  <div class="modal-card">
+    <h3>Add something to the shelf</h3>
+    <div class="modal-scroll">
+      <div class="decor-grid" id="decor-grid"></div>
+      <p class="menu-note">Tap an ornament to put it on the shelf. Tap it there to move or remove it.</p>
+    </div>
+    <div class="modal-actions"><button class="btn ghost" id="btn-decor-close">Done</button></div>
+  </div>
+</div>
+
+<!-- ── Ornament actions ───────────────────────────────────────── -->
+<div class="modal" id="modal-decor-item" hidden>
+  <div class="modal-card">
+    <h3 id="decor-item-name">Ornament</h3>
+    <div class="modal-scroll">
+      <div class="decor-preview" id="decor-preview"></div>
+      <div class="chips">
+        <button class="chip" id="decor-left">← Move left</button>
+        <button class="chip" id="decor-right">Move right →</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="decor-remove">Remove</button>
+      <button class="btn primary" id="decor-done">Done</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Manual entry dialog ────────────────────────────────────── -->
 <div class="modal" id="modal-manual" hidden>
@@ -179,6 +222,7 @@
 <div class="toast" id="toast" hidden></div>
 
 <script src="js/store.js"></script>
+<script src="js/decor.js"></script>
 <script src="js/lookup.js"></script>
 <script src="js/ean13.js"></script>
 <script src="js/scanner.js"></script>

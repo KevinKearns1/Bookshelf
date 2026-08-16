@@ -53,15 +53,23 @@ live in your phone's local storage.)*
 
 ## Using it
 
+Two collections, each with its own shelf and catalogue: **My Books** for what you
+own, **Want to Read** for what you don't yet.
+
 - **Scan** — point at the barcode on the back cover. Hold steady, fill the bracket
-  with the barcode. It beeps and buzzes when it reads one, then shows what it found.
-  Add it and the camera stays open, so a stack of books goes quickly.
+  with the barcode. It beeps and buzzes when it reads one, then asks whether you
+  have it or want it. The camera stays open, so a stack of books goes quickly.
 - **Shelf** — every book as a coloured spine, sized roughly by page count.
   Tap a spine to open it.
-- **Catalog** — the formal view: title, author, publisher, year, length. Searchable,
-  and sortable by title, author, year or length.
-- **Book details** — mark it Unread / Reading / Read, rate it, change the spine
-  colour, keep notes. Books marked *Reading* get a gold ribbon on the shelf.
+- **Decorate** — put a plant, a globe, a cat, a candle and so on between the books.
+  Tap an ornament on the shelf to move it along or take it away.
+- **Catalog** — cover art in a grid, two up, with title and author beneath. Real
+  covers where they exist; where they don't, a drawn one in the book's own colour.
+  The toggle beside the sort menu swaps to a formal list: title, author, publisher,
+  year, length. Both are searchable and sortable four ways.
+- **Book details** — mark it Unread / Reading / Read, rate it, move it between
+  collections, change the spine colour, keep notes. Books marked *Reading* get a
+  gold ribbon on the shelf.
 - **⋯ menu** — add a book by hand (or by typing an ISBN), export your library to a
   JSON file, import one back, or wipe everything.
 
@@ -77,6 +85,7 @@ what's in the folder is what runs.
 |---|---|
 | `index.html` | The whole app's markup |
 | `css/app.css` | All styling, light and dark |
+| `js/decor.js` | The shelf ornaments, drawn as SVG |
 | `js/ean13.js` | The barcode reader, written from scratch |
 | `js/scanner.js` | Camera, frame grabbing, torch |
 | `js/lookup.js` | ISBN → book details |

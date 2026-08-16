@@ -14,7 +14,11 @@
 
   try {
     UI.setView(localStorage.getItem('bookshelf.view') === 'list' ? 'list' : 'shelf');
-  } catch (e) { UI.setView('shelf'); }
+    UI.setLayout(localStorage.getItem('bookshelf.layout') === 'list' ? 'list' : 'grid');
+    UI.setCollection(localStorage.getItem('bookshelf.collection') === 'wishlist' ? 'wishlist' : 'owned');
+  } catch (e) {
+    UI.setView('shelf');
+  }
 
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
     window.addEventListener('load', function () {
@@ -29,9 +33,16 @@
     var root = document.documentElement;
 
     function apply() {
-      var h = vv ? vv.height : window.innerHeight;
-      var top = vv ? vv.offsetTop : 0;
-      var keyboard = Math.max(0, window.innerHeight - h - top);
+      var h = vv && vv.height > 0 ? vv.height : window.innerHeight;
+      var top = vv && vv.offsetTop >= 0 ? vv.offsetTop : 0;
+
+      /* A backgrounded or not-yet-painted page can report a height of
+         zero, and writing that into the layout collapses every dialog
+         to nothing — which silently sends taps to whatever is behind
+         them. Refuse anything that isn't a plausible screen. */
+      if (!(h > 120)) return;
+
+      var keyboard = Math.max(0, (window.innerHeight || h) - h - top);
       root.style.setProperty('--vvh', h + 'px');
       root.style.setProperty('--vvtop', top + 'px');
       root.style.setProperty('--kb', keyboard + 'px');
@@ -55,14 +66,19 @@
 
   el('tab-shelf').addEventListener('click', function () { UI.setView('shelf'); });
   el('tab-list').addEventListener('click', function () { UI.setView('list'); });
+  el('coll-owned').addEventListener('click', function () { UI.setCollection('owned'); });
+  el('coll-wishlist').addEventListener('click', function () { UI.setCollection('wishlist'); });
+  el('btn-layout').addEventListener('click', UI.toggleLayout);
 
   el('shelf-wrap').addEventListener('click', function (e) {
     var b = e.target.closest('.book');
-    if (b) UI.openDetail(b.dataset.id);
+    if (b) { UI.openDetail(b.dataset.id); return; }
+    var d = e.target.closest('.decor');
+    if (d) openDecorItem(d.dataset.decor);
   });
 
   el('catalog').addEventListener('click', function (e) {
-    var b = e.target.closest('.entry');
+    var b = e.target.closest('.entry') || e.target.closest('.card');
     if (b) UI.openDetail(b.dataset.id);
   });
 
@@ -74,8 +90,59 @@
     if (e.key !== 'Escape') return;
     if (!el('scanner').hidden) closeScanner();
     else if (!el('modal-manual').hidden) el('modal-manual').hidden = true;
+    else if (!el('modal-decor-item').hidden) el('modal-decor-item').hidden = true;
+    else if (!el('modal-decor').hidden) el('modal-decor').hidden = true;
     else if (!el('modal-menu').hidden) el('modal-menu').hidden = true;
     else if (!el('sheet').hidden) UI.closeSheet();
+  });
+
+  /* ── decorating ─────────────────────────────────────────────── */
+
+  var decorItemId = null;
+
+  el('btn-decorate').addEventListener('click', openDecorPicker);
+  el('btn-decor-close').addEventListener('click', function () { el('modal-decor').hidden = true; });
+  el('decor-done').addEventListener('click', function () { el('modal-decor-item').hidden = true; });
+
+  function openDecorPicker() {
+    el('decor-grid').innerHTML = Decor.KINDS.map(function (k) {
+      return '<button class="decor-option" data-kind="' + k.id + '">' +
+               '<span class="decor-art">' + k.svg + '</span>' +
+               '<span class="decor-label">' + UI.esc(k.label) + '</span>' +
+             '</button>';
+    }).join('');
+    el('modal-decor').hidden = false;
+  }
+
+  el('decor-grid').addEventListener('click', function (e) {
+    var opt = e.target.closest('.decor-option');
+    if (!opt) return;
+    Store.decorAdd(opt.dataset.kind, UI.getCollection());
+    UI.renderAll();
+    UI.toast(Decor.get(opt.dataset.kind).label + ' added');
+  });
+
+  function openDecorItem(id) {
+    var item = Store.decorGet(id);
+    if (!item) return;
+    var kind = Decor.get(item.kind);
+    decorItemId = id;
+    el('decor-item-name').textContent = kind ? kind.label : 'Ornament';
+    el('decor-preview').innerHTML = kind ? kind.svg : '';
+    el('modal-decor-item').hidden = false;
+  }
+
+  el('decor-left').addEventListener('click', function () {
+    if (Store.shift(decorItemId, -1)) UI.renderAll();
+  });
+  el('decor-right').addEventListener('click', function () {
+    if (Store.shift(decorItemId, 1)) UI.renderAll();
+  });
+  el('decor-remove').addEventListener('click', function () {
+    Store.decorRemove(decorItemId);
+    el('modal-decor-item').hidden = true;
+    UI.renderAll();
+    UI.toast('Removed');
   });
 
   /* ── scanning ───────────────────────────────────────────────── */
@@ -83,7 +150,8 @@
   el('btn-scan').addEventListener('click', openScanner);
   el('btn-close-scan').addEventListener('click', closeScanner);
   el('btn-scan-again').addEventListener('click', scanAgain);
-  el('btn-add').addEventListener('click', addPending);
+  el('btn-add').addEventListener('click', function () { addPending('owned'); });
+  el('btn-add-wish').addEventListener('click', function () { addPending('wishlist'); });
 
   el('btn-manual').addEventListener('click', function () {
     closeScanner();
@@ -141,40 +209,43 @@
       .then(function (data) {
         if (data) {
           pending = Store.make(data);
-          showResult(existing ? 'Already on your shelf' : 'Found', pending.title,
+          showResult(existing ? 'Already in your library' : 'Found', pending.title,
                      [UI.authorsOf(pending), pending.year, pending.pages ? pending.pages + ' pp.' : '']
                        .filter(Boolean).join(' · '),
-                     Store.color(pending), existing ? 'Add a copy' : 'Add to shelf');
+                     Store.color(pending));
         } else {
           pending = Store.make({ isbn: isbn, title: 'Unknown title', authors: [] });
           showResult('Not in the catalogue', 'ISBN ' + isbn,
                      'Nobody has this one listed. Add it and fill in the details yourself.',
-                     Store.color(pending), 'Add anyway');
+                     Store.color(pending));
         }
       })
       .catch(function () {
         pending = Store.make({ isbn: isbn, title: 'Unknown title', authors: [] });
         showResult('No connection', 'ISBN ' + isbn,
                    'Saved without details — reconnect and use Edit details to fetch them.',
-                   Store.color(pending), 'Add anyway');
+                   Store.color(pending));
       });
   }
 
-  function showResult(kicker, title, meta, color, action) {
+  function showResult(kicker, title, meta, color) {
     el('result-kicker').textContent = kicker;
     el('result-title').textContent = title;
     el('result-meta').textContent = meta;
     el('result-spine').style.setProperty('--c', color);
-    el('btn-add').textContent = action;
     el('result-card').hidden = false;
     el('scan-hint').textContent = '';
   }
 
-  function addPending() {
+  /* Which pile it goes on is asked at the moment of scanning — that is
+     when you know whether the book is in your hand or on a shop shelf. */
+  function addPending(list) {
     if (!pending) return;
+    pending.list = list;
     Store.add(pending);
     UI.renderAll();
-    UI.toast('“' + trim(pending.title, 28) + '” shelved');
+    UI.toast('“' + trim(pending.title, 24) + '”' +
+             (list === 'wishlist' ? ' added to Want to Read' : ' shelved'));
     scanAgain();
   }
 
@@ -241,6 +312,7 @@
       Store.update(editingId, fields);
       UI.toast('Updated');
     } else {
+      fields.list = UI.getCollection();      // lands in whichever collection you are looking at
       Store.add(Store.make(fields));
       UI.toast('“' + trim(title, 28) + '” shelved');
     }
