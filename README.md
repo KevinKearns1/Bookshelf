@@ -61,8 +61,11 @@ own, **Want to Read** for what you don't yet.
   have it or want it. The camera stays open, so a stack of books goes quickly.
 - **Shelf** — every book as a coloured spine, sized roughly by page count.
   Tap a spine to open it.
-- **Decorate** — put a plant, a globe, a cat, a candle and so on between the books.
-  Tap an ornament on the shelf to move it along or take it away.
+- **Decorate** — put your own photos between the books: pick one from your photo
+  library, paste it, or drag it in. The white background of a product photo is cut
+  out automatically, and you set how big it stands. There are drawn ornaments too
+  (plant, globe, cat, candle and so on) if you haven't got a photo to hand. Tap an
+  ornament on the shelf to resize it, move it along, or take it away.
 - **Catalog** — cover art in a grid, two up, with title and author beneath. Real
   covers where they exist; where they don't, a drawn one in the book's own colour.
   The toggle beside the sort menu swaps to a formal list: title, author, publisher,
@@ -85,7 +88,8 @@ what's in the folder is what runs.
 |---|---|
 | `index.html` | The whole app's markup |
 | `css/app.css` | All styling, light and dark |
-| `js/decor.js` | The shelf ornaments, drawn as SVG |
+| `js/photos.js` | Your photos: cutout, resize, IndexedDB storage |
+| `js/decor.js` | The drawn shelf ornaments |
 | `js/ean13.js` | The barcode reader, written from scratch |
 | `js/scanner.js` | Camera, frame grabbing, torch |
 | `js/lookup.js` | ISBN → book details |

@@ -147,10 +147,46 @@
   <div class="modal-card">
     <h3>Add something to the shelf</h3>
     <div class="modal-scroll">
+      <button class="photo-cta" id="btn-photo-pick">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5-6 6-3-3-4 4"/></svg>
+        <span>
+          <strong>Use one of your photos</strong>
+          <em>Anything you like — the white background is removed for you</em>
+        </span>
+      </button>
+      <p class="or-line"><span>or pick a drawn one</span></p>
       <div class="decor-grid" id="decor-grid"></div>
-      <p class="menu-note">Tap an ornament to put it on the shelf. Tap it there to move or remove it.</p>
+      <p class="menu-note">Tap an ornament on the shelf to resize, move or remove it.</p>
     </div>
     <div class="modal-actions"><button class="btn ghost" id="btn-decor-close">Done</button></div>
+  </div>
+</div>
+<input type="file" id="photo-file" accept="image/*" hidden>
+
+<!-- ── Photo import preview ───────────────────────────────────── -->
+<div class="modal" id="modal-photo" hidden>
+  <div class="modal-card">
+    <h3>Add your photo</h3>
+    <div class="modal-scroll">
+      <div class="photo-stage" id="photo-stage">
+        <div class="photo-shelf">
+          <img id="photo-preview" alt="">
+        </div>
+      </div>
+      <p class="field-note" id="photo-note">Working…</p>
+      <label class="switch">
+        <input type="checkbox" id="photo-cutout" checked>
+        <span>Remove the background</span>
+      </label>
+      <label class="slider">
+        <span>Size</span>
+        <input type="range" id="photo-size" min="40" max="165" value="110">
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="btn-photo-cancel">Cancel</button>
+      <button class="btn primary" id="btn-photo-add">Put on shelf</button>
+    </div>
   </div>
 </div>
 
@@ -160,6 +196,10 @@
     <h3 id="decor-item-name">Ornament</h3>
     <div class="modal-scroll">
       <div class="decor-preview" id="decor-preview"></div>
+      <label class="slider" id="decor-size-row" hidden>
+        <span>Size</span>
+        <input type="range" id="decor-size" min="40" max="165" value="110">
+      </label>
       <div class="chips">
         <button class="chip" id="decor-left">← Move left</button>
         <button class="chip" id="decor-right">Move right →</button>
@@ -222,6 +262,7 @@
 <div class="toast" id="toast" hidden></div>
 
 <script src="js/store.js"></script>
+<script src="js/photos.js"></script>
 <script src="js/decor.js"></script>
 <script src="js/lookup.js"></script>
 <script src="js/ean13.js"></script>

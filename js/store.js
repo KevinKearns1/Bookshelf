@@ -209,16 +209,27 @@ var Store = (function () {
     return decor.filter(function (d) { return (d.list || 'owned') === list; });
   }
 
-  function decorAdd(kind, list) {
+  function decorAdd(kind, list, extra) {
     var item = {
       id: 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       kind: kind,
       list: list || 'owned',
       order: nextOrder()
     };
+    if (extra) {
+      for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) item[k] = extra[k];
+    }
     decor.push(item);
     save();
     return item;
+  }
+
+  function decorUpdate(id, patch) {
+    var d = decorGet(id);
+    if (!d) return null;
+    for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) d[k] = patch[k];
+    save();
+    return d;
   }
 
   function decorGet(id) {
@@ -313,7 +324,8 @@ var Store = (function () {
     remove: remove, clear: clear, findByIsbn: findByIsbn,
     color: color, isPale: isPale, coverUrl: coverUrl, totalPages: totalPages,
     decorAll: decorAll, decorAdd: decorAdd, decorGet: decorGet,
-    decorRemove: decorRemove, shelfItems: shelfItems, shift: shift,
+    decorUpdate: decorUpdate, decorRemove: decorRemove,
+    shelfItems: shelfItems, shift: shift,
     toJSON: toJSON, fromJSON: fromJSON
   };
 })();

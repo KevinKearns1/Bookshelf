@@ -123,10 +123,22 @@ var UI = (function () {
   }
 
   function ornament(d) {
+    if (d.kind === 'photo') return photoOrnament(d);
     var kind = Decor.get(d.kind);
     if (!kind) return '';
     return '<button class="decor" data-decor="' + d.id + '" style="--w:' + kind.w + 'px;--h:' + kind.h + 'px"' +
            ' aria-label="' + esc(kind.label) + '">' + kind.svg + '</button>';
+  }
+
+  function photoOrnament(d) {
+    var src = Photos.get(d.photoId);
+    if (!src) return '';                      // image not in the database
+    var h = d.sizePx || 110;
+    var w = Math.max(12, Math.round(h * (d.aspect || 1)));
+    return '<button class="decor is-photo" data-decor="' + d.id + '" style="--w:' + w + 'px;--h:' + h + 'px"' +
+           ' aria-label="' + esc(d.label || 'Photo') + '">' +
+             '<img src="' + src + '" alt="">' +
+           '</button>';
   }
 
   /* Measure the actual type rather than guessing at character widths.

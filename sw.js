@@ -6,13 +6,14 @@
    Bump CACHE when you change any file in SHELL.
    ============================================================ */
 
-var CACHE = 'bookshelf-v3';
+var CACHE = 'bookshelf-v4';
 
 var SHELL = [
   './',
   './index.html',
   './css/app.css',
   './js/store.js',
+  './js/photos.js',
   './js/decor.js',
   './js/lookup.js',
   './js/ean13.js',

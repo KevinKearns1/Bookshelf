@@ -12,6 +12,10 @@
   Store.load();
   UI.renderAll();
 
+  /* Photos come out of IndexedDB asynchronously; draw the shelf again
+     once they are in memory so ornaments appear. */
+  Photos.loadAll().then(function () { UI.renderAll(); });
+
   try {
     UI.setView(localStorage.getItem('bookshelf.view') === 'list' ? 'list' : 'shelf');
     UI.setLayout(localStorage.getItem('bookshelf.layout') === 'list' ? 'list' : 'grid');
@@ -125,10 +129,19 @@
   function openDecorItem(id) {
     var item = Store.decorGet(id);
     if (!item) return;
-    var kind = Decor.get(item.kind);
     decorItemId = id;
-    el('decor-item-name').textContent = kind ? kind.label : 'Ornament';
-    el('decor-preview').innerHTML = kind ? kind.svg : '';
+
+    if (item.kind === 'photo') {
+      el('decor-item-name').textContent = 'Your photo';
+      el('decor-preview').innerHTML = '<img src="' + Photos.get(item.photoId) + '" alt="" style="height:110px">';
+      el('decor-size').value = item.sizePx || 110;
+      el('decor-size-row').hidden = false;
+    } else {
+      var kind = Decor.get(item.kind);
+      el('decor-item-name').textContent = kind ? kind.label : 'Ornament';
+      el('decor-preview').innerHTML = kind ? kind.svg : '';
+      el('decor-size-row').hidden = true;
+    }
     el('modal-decor-item').hidden = false;
   }
 
@@ -139,10 +152,124 @@
     if (Store.shift(decorItemId, 1)) UI.renderAll();
   });
   el('decor-remove').addEventListener('click', function () {
+    var item = Store.decorGet(decorItemId);
+    if (item && item.photoId) Photos.del(item.photoId);
     Store.decorRemove(decorItemId);
     el('modal-decor-item').hidden = true;
     UI.renderAll();
     UI.toast('Removed');
+  });
+
+  el('decor-size').addEventListener('input', function () {
+    Store.decorUpdate(decorItemId, { sizePx: +this.value });
+    UI.renderAll();
+  });
+
+  /* ── your own photos ────────────────────────────────────────── */
+
+  var incoming = null;        // the File being previewed
+
+  el('btn-photo-pick').addEventListener('click', function () { el('photo-file').click(); });
+  el('btn-photo-cancel').addEventListener('click', function () {
+    el('modal-photo').hidden = true;
+    incoming = null;
+  });
+
+  el('photo-file').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (file) startPhoto(file);
+  });
+
+  /* Pasting or dragging in works too, which is how this will be used
+     on a desktop. */
+  document.addEventListener('paste', function (e) {
+    if (!e.clipboardData) return;
+    var items = e.clipboardData.items || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.indexOf('image/') === 0) {
+        var file = items[i].getAsFile();
+        if (file) { e.preventDefault(); startPhoto(file); return; }
+      }
+    }
+  });
+
+  ['dragover', 'drop'].forEach(function (type) {
+    document.addEventListener(type, function (e) {
+      if (!e.dataTransfer) return;
+      e.preventDefault();
+      if (type !== 'drop') return;
+      var file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file && /^image\//.test(file.type)) startPhoto(file);
+    });
+  });
+
+  function startPhoto(file) {
+    if (!/^image\//.test(file.type || '')) { UI.toast('That is not an image'); return; }
+    incoming = file;
+    el('modal-decor').hidden = true;
+    el('modal-photo').hidden = false;
+    el('photo-preview').removeAttribute('src');
+    el('photo-note').textContent = 'Working…';
+    el('btn-photo-add').disabled = true;
+    renderPhotoPreview();
+  }
+
+  var processed = null;
+
+  function renderPhotoPreview() {
+    if (!incoming) return;
+    var cutout = el('photo-cutout').checked;
+    el('photo-note').textContent = 'Working…';
+    el('btn-photo-add').disabled = true;
+
+    Photos.process(incoming, { cutout: cutout })
+      .then(function (result) {
+        processed = result;
+        var img = el('photo-preview');
+        img.src = result.dataUrl;
+        applyPreviewSize();
+        var kb = Math.round(result.dataUrl.length * 0.75 / 1024);
+        el('photo-note').textContent = cutout
+          ? 'Background removed · ' + kb + ' KB'
+          : 'Kept as photographed · ' + kb + ' KB';
+        el('btn-photo-add').disabled = false;
+      })
+      .catch(function (err) {
+        el('photo-note').textContent = err.message || 'Could not read that image';
+      });
+  }
+
+  function applyPreviewSize() {
+    var h = +el('photo-size').value;
+    el('photo-preview').style.height = h + 'px';
+    el('photo-preview').style.width = 'auto';
+  }
+
+  el('photo-cutout').addEventListener('change', renderPhotoPreview);
+  el('photo-size').addEventListener('input', applyPreviewSize);
+
+  el('btn-photo-add').addEventListener('click', function () {
+    if (!processed) return;
+    var id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    var aspect = processed.width / processed.height;
+
+    Photos.put(id, processed.dataUrl)
+      .then(function () {
+        Store.decorAdd('photo', UI.getCollection(), {
+          photoId: id,
+          aspect: aspect,
+          sizePx: +el('photo-size').value,
+          label: 'Photo'
+        });
+        el('modal-photo').hidden = true;
+        incoming = null; processed = null;
+        UI.renderAll();
+        UI.toast('Added to the shelf');
+      })
+      .catch(function () {
+        el('photo-note').textContent = 'There was no room to save that image.';
+      });
   });
 
   /* ── scanning ───────────────────────────────────────────────── */
