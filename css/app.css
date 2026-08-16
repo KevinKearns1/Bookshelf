@@ -41,8 +41,8 @@
     --gold:    #D6A64A;
     --accent:  #C98A6B;
 
-    --case-back: #2A1E15;
-    --case-deep: #1B120C;
+    --case-back: #2E2118;
+    --case-deep: #241A12;   /* lighter than the page, or lower shelves read as a void */
     --plank:     #5A3D28;
     --plank-lip: #75543A;
 
@@ -235,10 +235,12 @@ button { cursor: pointer; }
   letter-spacing: .015em;
   white-space: nowrap;
 }
-/* Sizes are set per book in ui.js so long titles shrink to fit
-   rather than being sliced off at the shelf edge. */
+/* Block, not inline: in vertical writing mode these become two
+   side-by-side columns down the spine. Left inline, the author simply
+   continues the title's line. Sizes are set per book in ui.js. */
+.spine-title, .spine-author { display: block; }
 .spine-title { font-weight: 600; }
-.spine-author { opacity: .82; margin-top: 6px; }
+.spine-author { opacity: .78; margin-block-start: 5px; }
 
 .spine.is-pale .spine-text { color: #23180E; text-shadow: 0 1px 0 rgba(255,255,255,.35); }
 .spine.is-pale::before, .spine.is-pale::after { background: rgba(80,50,10,.45); box-shadow: 0 3px 0 rgba(80,50,10,.28); }
@@ -314,6 +316,9 @@ button { cursor: pointer; }
 .entry:active { background: var(--panel-2); }
 .entry-chip { width: 6px; border-radius: 3px; background: var(--c); flex: none; }
 .entry-main { min-width: 0; flex: 1; }
+/* Blocks, or title/author/meta run together on one line and the
+   ellipsis rules below never take effect. */
+.entry-title, .entry-author, .entry-meta { display: block; }
 .entry-title {
   font-family: "Iowan Old Style", Palatino, Georgia, serif;
   font-size: 16px; font-weight: 600;

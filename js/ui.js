@@ -77,33 +77,51 @@ var UI = (function () {
     }).join('');
   }
 
-  /* Fit the lettering to the spine: shrink the type first, and only
-     abbreviate once even the smallest size would run off the end.
-     ~0.62em per character is close enough for these serif faces. */
+  /* Measure the actual type rather than guessing at character widths.
+     The lettering is rotated 90° on the spine, so a string's rendered
+     width is exactly the length it needs down the spine. */
+  var gauge = document.createElement('canvas').getContext('2d');
+
+  function textWidth(text, px, weight) {
+    gauge.font = weight + ' ' + px + 'px "Iowan Old Style", Palatino, Georgia, serif';
+    /* The canvas knows nothing of the stylesheet's letter-spacing, and
+       forgetting it overflows the spine, which clips the title at both
+       ends because the text is centred. */
+    return gauge.measureText(text).width + text.length * px * 0.015 + 2;
+  }
+
+  /* Longest prefix of `text` that fits `room`, with an ellipsis. */
+  function fitText(text, px, weight, room) {
+    if (textWidth(text, px, weight) <= room) return text;
+    var lo = 0, hi = text.length;
+    while (lo < hi) {
+      var mid = (lo + hi + 1) >> 1;
+      if (textWidth(text.slice(0, mid) + '…', px, weight) <= room) lo = mid; else hi = mid - 1;
+    }
+    if (lo < 2) return '';
+    return text.slice(0, lo).replace(/[\s,;:.-]+$/, '') + '…';
+  }
+
+  /* Shrink the type before abbreviating: a smaller whole title beats a
+     larger truncated one. */
   function spineText(b) {
     var room = b.heightPx - 26;
     var full = authorsOf(b);
-    var title = b.title;
 
-    var size = Math.floor(room / (title.length * 0.62));
-    size = Math.max(8, Math.min(12, size));
+    var size = 12;
+    while (size > 8 && textWidth(b.title, size, '600') > room) size--;
 
-    var fits = Math.floor(room / (size * 0.62));
-    if (title.length > fits) title = clip(title, fits);
+    var title = fitText(b.title, size, '600', room);
+    var used = textWidth(title, size, '600');
 
-    var author = '';
-    var authorSize = 9;
-    var left = room - title.length * size * 0.62 - 10;
-    if (full && left > 32) {
-      author = clip(full, Math.floor(left / (authorSize * 0.62)));
+    /* The author gets its own column beside the title, so it needs
+       width on the spine as well as length left over. */
+    var author = '', authorSize = 9;
+    if (full && b.widthPx >= 34 && room - used > 34) {
+      author = fitText(full, authorSize, '400', room - 4);
     }
 
     return { title: title, size: size, author: author, authorSize: authorSize, fullAuthor: full };
-  }
-
-  function clip(s, n) {
-    if (n < 2) return '';
-    return s.length <= n ? s : s.slice(0, n - 1).replace(/[\s,;:]+$/, '') + '…';
   }
 
   function sortBooks(list, mode) {
