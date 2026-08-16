@@ -1,0 +1,12 @@
+# OS clutter
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Nothing here is built, so there is nothing to ignore beyond the above.
+# Your library lives in the browser on your phone, never in this repo.

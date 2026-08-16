@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Bookshelf</title>
+<meta name="description" content="Scan a book's barcode and it lands on your shelf.">
+<meta name="theme-color" content="#8B5E3C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bookshelf">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <h1 class="brand">Bookshelf</h1>
+    <button class="icon-btn" id="btn-menu" aria-label="Menu" title="Menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    </button>
+  </div>
+  <p class="stats" id="stats">No books yet</p>
+  <div class="segmented" role="tablist" aria-label="View">
+    <button class="seg is-active" id="tab-shelf" role="tab" aria-selected="true">Shelf</button>
+    <button class="seg" id="tab-list" role="tab" aria-selected="false">Catalog</button>
+    <span class="seg-thumb" aria-hidden="true"></span>
+  </div>
+</header>
+
+<main class="views">
+  <!-- ── Shelf view ───────────────────────────────────────────── -->
+  <section class="view is-active" id="view-shelf" role="tabpanel" aria-label="Shelf">
+    <div class="bookcase">
+      <div class="shelf-wrap" id="shelf-wrap"></div>
+    </div>
+    <div class="empty" id="empty-shelf" hidden>
+      <svg viewBox="0 0 120 90" class="empty-art" aria-hidden="true">
+        <rect x="14" y="20" width="14" height="52" rx="2"/>
+        <rect x="31" y="30" width="11" height="42" rx="2"/>
+        <rect x="45" y="24" width="16" height="48" rx="2"/>
+        <rect x="64" y="34" width="10" height="38" rx="2"/>
+        <rect x="6" y="72" width="108" height="7" rx="2" class="plank"/>
+      </svg>
+      <h2>Your shelf is empty</h2>
+      <p>Tap <strong>Scan</strong> and point the camera at the barcode on the back of a book.</p>
+    </div>
+  </section>
+
+  <!-- ── Catalog view ─────────────────────────────────────────── -->
+  <section class="view" id="view-list" role="tabpanel" aria-label="Catalog" hidden>
+    <div class="toolbar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+        <input type="search" id="search" placeholder="Search title, author, subject" autocomplete="off">
+      </label>
+      <select id="sort" aria-label="Sort by">
+        <option value="added">Recently added</option>
+        <option value="title">Title A–Z</option>
+        <option value="author">Author A–Z</option>
+        <option value="year">Year (newest)</option>
+        <option value="pages">Longest</option>
+      </select>
+    </div>
+    <ol class="catalog" id="catalog"></ol>
+    <div class="empty" id="empty-list" hidden>
+      <h2>Nothing here</h2>
+      <p>No books match that search.</p>
+    </div>
+  </section>
+</main>
+
+<button class="fab" id="btn-scan">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/>
+    <line x1="7" y1="12" x2="17" y2="12"/>
+  </svg>
+  Scan
+</button>
+
+<!-- ── Scanner ────────────────────────────────────────────────── -->
+<div class="scanner" id="scanner" hidden>
+  <video id="video" playsinline muted autoplay></video>
+  <div class="scan-ui">
+    <div class="scan-top">
+      <button class="round-btn" id="btn-close-scan" aria-label="Close scanner">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+      <button class="round-btn" id="btn-torch" aria-label="Toggle flashlight" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6l-1 6h4l-8 14 2-9H7l2-11z"/></svg>
+      </button>
+    </div>
+    <div class="scan-mid">
+      <div class="reticle" id="reticle">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <span class="laser"></span>
+      </div>
+      <p class="scan-hint" id="scan-hint">Line up the barcode on the back cover</p>
+    </div>
+    <button class="ghost-btn" id="btn-manual">Enter ISBN by hand</button>
+  </div>
+
+  <div class="result-card" id="result-card" hidden>
+    <div class="result-body">
+      <div class="result-spine" id="result-spine"></div>
+      <div class="result-text">
+        <p class="result-kicker" id="result-kicker">Found</p>
+        <h3 id="result-title">—</h3>
+        <p class="result-meta" id="result-meta"></p>
+      </div>
+    </div>
+    <div class="result-actions">
+      <button class="btn ghost" id="btn-scan-again">Scan another</button>
+      <button class="btn primary" id="btn-add">Add to shelf</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Book detail sheet ──────────────────────────────────────── -->
+<div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+<section class="sheet" id="sheet" hidden aria-modal="true" role="dialog">
+  <div class="sheet-grab"></div>
+  <div class="sheet-scroll" id="sheet-body"></div>
+</section>
+
+<!-- ── Manual entry dialog ────────────────────────────────────── -->
+<div class="modal" id="modal-manual" hidden>
+  <form class="modal-card" id="form-manual">
+    <h3>Add a book</h3>
+    <label class="field">
+      <span>ISBN <em>(optional)</em></span>
+      <input type="text" id="m-isbn" inputmode="numeric" placeholder="9780141036144" autocomplete="off">
+    </label>
+    <p class="field-note" id="m-lookup-note"></p>
+    <label class="field">
+      <span>Title</span>
+      <input type="text" id="m-title" placeholder="Nineteen Eighty-Four" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Author</span>
+      <input type="text" id="m-author" placeholder="George Orwell" autocomplete="off">
+    </label>
+    <div class="field-row">
+      <label class="field"><span>Year</span><input type="text" id="m-year" inputmode="numeric" autocomplete="off"></label>
+      <label class="field"><span>Pages</span><input type="text" id="m-pages" inputmode="numeric" autocomplete="off"></label>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="btn-manual-cancel">Cancel</button>
+      <button type="button" class="btn" id="btn-manual-lookup">Look up ISBN</button>
+      <button type="submit" class="btn primary">Add</button>
+    </div>
+  </form>
+</div>
+
+<!-- ── Menu sheet ─────────────────────────────────────────────── -->
+<div class="modal" id="modal-menu" hidden>
+  <div class="modal-card menu-card">
+    <h3>Bookshelf</h3>
+    <button class="menu-item" id="btn-add-manual">Add a book by hand</button>
+    <button class="menu-item" id="btn-export">Export library (.json)</button>
+    <button class="menu-item" id="btn-import">Import library…</button>
+    <button class="menu-item danger" id="btn-clear">Delete every book</button>
+    <p class="menu-note">Your library lives on this device only. Nothing is uploaded — book details are fetched from Open Library when you scan.</p>
+    <div class="modal-actions"><button class="btn ghost" id="btn-menu-close">Close</button></div>
+  </div>
+</div>
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/store.js"></script>
+<script src="js/lookup.js"></script>
+<script src="js/ean13.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
