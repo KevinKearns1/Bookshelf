@@ -126,12 +126,14 @@
 <section class="sheet" id="sheet" hidden aria-modal="true" role="dialog">
   <div class="sheet-grab"></div>
   <div class="sheet-scroll" id="sheet-body"></div>
+  <div class="detail-actions" id="sheet-actions"></div>
 </section>
 
 <!-- ── Manual entry dialog ────────────────────────────────────── -->
 <div class="modal" id="modal-manual" hidden>
   <form class="modal-card" id="form-manual">
     <h3>Add a book</h3>
+    <div class="modal-scroll">
     <label class="field">
       <span>ISBN <em>(optional)</em></span>
       <input type="text" id="m-isbn" inputmode="numeric" placeholder="9780141036144" autocomplete="off">
@@ -149,6 +151,7 @@
       <label class="field"><span>Year</span><input type="text" id="m-year" inputmode="numeric" autocomplete="off"></label>
       <label class="field"><span>Pages</span><input type="text" id="m-pages" inputmode="numeric" autocomplete="off"></label>
     </div>
+    </div>
     <div class="modal-actions">
       <button type="button" class="btn ghost" id="btn-manual-cancel">Cancel</button>
       <button type="button" class="btn" id="btn-manual-lookup">Look up ISBN</button>
@@ -161,11 +164,13 @@
 <div class="modal" id="modal-menu" hidden>
   <div class="modal-card menu-card">
     <h3>Bookshelf</h3>
-    <button class="menu-item" id="btn-add-manual">Add a book by hand</button>
-    <button class="menu-item" id="btn-export">Export library (.json)</button>
-    <button class="menu-item" id="btn-import">Import library…</button>
-    <button class="menu-item danger" id="btn-clear">Delete every book</button>
-    <p class="menu-note">Your library lives on this device only. Nothing is uploaded — book details are fetched from Open Library when you scan.</p>
+    <div class="modal-scroll">
+      <button class="menu-item" id="btn-add-manual">Add a book by hand</button>
+      <button class="menu-item" id="btn-export">Export library (.json)</button>
+      <button class="menu-item" id="btn-import">Import library…</button>
+      <button class="menu-item danger" id="btn-clear">Delete every book</button>
+      <p class="menu-note">Your library lives on this device only. Nothing is uploaded — book details are fetched from Open Library when you scan.</p>
+    </div>
     <div class="modal-actions"><button class="btn ghost" id="btn-menu-close">Close</button></div>
   </div>
 </div>

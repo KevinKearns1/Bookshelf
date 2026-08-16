@@ -53,6 +53,11 @@
 
 * { box-sizing: border-box; }
 
+/* Any rule that sets `display` outsmarts the browser's own
+   `[hidden] { display: none }`, which silently pins overlays open.
+   This has to win over every one of them. */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   height: 100%;
@@ -484,9 +489,10 @@ button { cursor: pointer; }
 
 .sheet {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
+  left: 0; right: 0;
+  bottom: var(--kb, 0px);        /* ride above the keyboard, not under it */
   z-index: 71;
-  max-height: 88vh;
+  max-height: calc(var(--vvh, 100vh) - 48px);
   background: var(--panel);
   border-radius: 20px 20px 0 0;
   box-shadow: var(--shadow-2);
@@ -502,9 +508,11 @@ button { cursor: pointer; }
   flex: none;
 }
 .sheet-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 8px 20px calc(26px + var(--safe-b));
+  padding: 8px 20px 16px;
 }
 
 .detail-head { display: flex; gap: 16px; margin-bottom: 16px; }
@@ -560,13 +568,29 @@ textarea.notes {
   margin-bottom: 18px;
 }
 
-.detail-actions { display: flex; gap: 8px; }
+.detail-actions {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px calc(14px + var(--safe-b));
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
 .detail-actions .btn { flex: 1; }
+.detail-actions:empty { display: none; }
 
 /* ── Modals ─────────────────────────────────────────────────── */
 
+/* Pinned to the *visible* viewport, not the layout one: when the
+   on-screen keyboard opens it steals the bottom of the screen, and a
+   centred dialog would put its buttons underneath it. --vvh/--vvtop
+   are kept up to date in app.js. */
 .modal {
-  position: fixed; inset: 0; z-index: 80;
+  position: fixed;
+  left: 0; right: 0;
+  top: var(--vvtop, 0px);
+  height: var(--vvh, 100%);
+  z-index: 80;
   background: rgba(20,14,8,.5);
   backdrop-filter: blur(2px);
   display: flex; align-items: flex-end; justify-content: center;
@@ -575,18 +599,32 @@ textarea.notes {
 }
 @media (min-height: 620px) { .modal { align-items: center; } }
 
+/* Title and buttons stay put; only the fields between them scroll, so
+   the Add button is reachable however little screen the keyboard
+   leaves behind. */
 .modal-card {
   width: 100%;
   max-width: 420px;
-  max-height: 86vh;
-  overflow-y: auto;
+  max-height: calc(var(--vvh, 100vh) - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--panel);
   border-radius: 18px;
   padding: 20px;
   box-shadow: var(--shadow-2);
   animation: slide .24s cubic-bezier(.2,.9,.3,1);
 }
-.modal-card h3 { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 20px; margin-bottom: 14px; }
+.modal-card h3 { flex: none; font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 20px; margin-bottom: 14px; }
+
+.modal-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* room so the last field isn't flush against the button row */
+  padding-bottom: 2px;
+}
 
 .field { display: block; margin-bottom: 12px; }
 .field > span { display: block; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
@@ -605,7 +643,7 @@ textarea.notes {
 .field-row .field { flex: 1; }
 .field-note { margin: -6px 0 12px; font-size: 13px; color: var(--muted); min-height: 18px; }
 
-.modal-actions { display: flex; gap: 8px; margin-top: 6px; }
+.modal-actions { flex: none; display: flex; gap: 8px; margin-top: 12px; }
 .modal-actions .btn { flex: 1; }
 
 .menu-card .menu-item {

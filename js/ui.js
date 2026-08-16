@@ -234,15 +234,15 @@ var UI = (function () {
       '</div>' +
 
       '<p class="sec-label">Notes</p>' +
-      '<textarea class="notes" id="d-notes" placeholder="What did you make of it?">' + esc(b.notes || '') + '</textarea>' +
-
-      '<div class="detail-actions">' +
-        '<button class="btn danger" id="d-delete">Remove</button>' +
-        '<button class="btn" id="d-edit">Edit details</button>' +
-        '<button class="btn primary" id="d-close">Done</button>' +
-      '</div>';
+      '<textarea class="notes" id="d-notes" placeholder="What did you make of it?">' + esc(b.notes || '') + '</textarea>';
 
     el('sheet-body').innerHTML = html;
+    /* The buttons live outside the scrolling area so they are always
+       on screen, however much detail a book has. */
+    el('sheet-actions').innerHTML =
+      '<button class="btn danger" id="d-delete">Remove</button>' +
+      '<button class="btn" id="d-edit">Edit details</button>' +
+      '<button class="btn primary" id="d-close">Done</button>';
     el('sheet').hidden = false;
     el('sheet-backdrop').hidden = false;
     el('sheet-body').scrollTop = 0;

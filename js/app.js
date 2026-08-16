@@ -22,6 +22,30 @@
     });
   }
 
+  /* Track the visible viewport so dialogs stay clear of the on-screen
+     keyboard. Without this the Add button hides behind it. */
+  (function trackViewport() {
+    var vv = window.visualViewport;
+    var root = document.documentElement;
+
+    function apply() {
+      var h = vv ? vv.height : window.innerHeight;
+      var top = vv ? vv.offsetTop : 0;
+      var keyboard = Math.max(0, window.innerHeight - h - top);
+      root.style.setProperty('--vvh', h + 'px');
+      root.style.setProperty('--vvtop', top + 'px');
+      root.style.setProperty('--kb', keyboard + 'px');
+    }
+
+    apply();
+    if (vv) {
+      vv.addEventListener('resize', apply);
+      vv.addEventListener('scroll', apply);
+    }
+    window.addEventListener('orientationchange', function () { setTimeout(apply, 250); });
+    window.addEventListener('resize', apply);
+  })();
+
   UI.hooks.edit = function (id) {
     UI.closeSheet();
     openManual(Store.get(id), id);
