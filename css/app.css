@@ -307,11 +307,45 @@ button { cursor: pointer; }
 }
 .decor:active svg { transform: translateY(-5px); }
 
+/* ── Face-out books ─────────────────────────────────────────── */
+
+.book.faceout { padding-left: 4px; padding-right: 4px; }
+
+.faceout-cover {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  border-radius: 2px 5px 5px 2px;
+  overflow: hidden;
+  background: var(--c);
+  box-shadow: 0 7px 12px rgba(0,0,0,.55), inset 3px 0 0 rgba(0,0,0,.28);
+}
+.faceout-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.faceout-cover .cover-title { font-size: 13px; -webkit-line-clamp: 5; }
+.faceout-cover .cover-author { font-size: 10px; }
+.book.faceout:active .faceout-cover { transform: translateY(-8px); transition: transform .16s ease; }
+
+.shelf-tools { display: flex; justify-content: center; gap: 8px; }
+#btn-shelf-mode .ico-covers { display: none; }
+#btn-shelf-mode.showing-covers .ico-spines { display: none; }
+#btn-shelf-mode.showing-covers .ico-covers { display: block; }
+#btn-shelf-mode svg { fill: none; stroke: currentColor; }
+#btn-shelf-mode.showing-covers .mode-label::before { content: "Spines"; }
+#btn-shelf-mode.showing-covers .mode-label { font-size: 0; }
+#btn-shelf-mode.showing-covers .mode-label::before { font-size: 14px; }
+
 .decorate-btn {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: 12px auto 0;
+  margin: 12px 0 0;
   border: 1px solid var(--line);
   background: var(--panel);
   color: var(--ink-2);
@@ -803,15 +837,26 @@ button { cursor: pointer; }
 }
 
 .detail-head { display: flex; gap: 16px; margin-bottom: 16px; }
-.detail-cover {
-  width: 92px;
+/* Real cover art if there is any, the drawn one underneath if not. */
+.detail-art {
+  position: relative;
+  width: 96px;
   flex: none;
   aspect-ratio: 2 / 3;
-  object-fit: cover;
   border-radius: 3px 6px 6px 3px;
-  box-shadow: 0 6px 14px rgba(0,0,0,.32);
+  overflow: hidden;
   background: var(--c);
+  box-shadow: 0 6px 14px rgba(0,0,0,.45);
 }
+.detail-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.detail-art .cover-title { font-size: 13px; -webkit-line-clamp: 5; }
 
 .detail-spine {
   width: 52px; height: 132px; flex: none;

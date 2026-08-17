@@ -19,6 +19,7 @@
   try {
     UI.setView(localStorage.getItem('bookshelf.view') === 'list' ? 'list' : 'shelf');
     UI.setLayout(localStorage.getItem('bookshelf.layout') === 'list' ? 'list' : 'grid');
+    UI.setShelfMode(localStorage.getItem('bookshelf.shelfMode') === 'covers' ? 'covers' : 'spines');
     UI.setCollection(localStorage.getItem('bookshelf.collection') === 'wishlist' ? 'wishlist' : 'owned');
   } catch (e) {
     UI.setView('shelf');
@@ -73,6 +74,7 @@
   el('coll-owned').addEventListener('click', function () { UI.setCollection('owned'); });
   el('coll-wishlist').addEventListener('click', function () { UI.setCollection('wishlist'); });
   el('btn-layout').addEventListener('click', UI.toggleLayout);
+  el('btn-shelf-mode').addEventListener('click', UI.toggleShelfMode);
 
   el('shelf-wrap').addEventListener('click', function (e) {
     var b = e.target.closest('.book');
@@ -456,6 +458,59 @@
   el('btn-add-manual').addEventListener('click', function () {
     el('modal-menu').hidden = true;
     openManual(null, null);
+  });
+
+  /* Books added before the lookup got better — or added while offline —
+     are missing covers and details. Go back over them. */
+  el('btn-refresh').addEventListener('click', function () {
+    el('modal-menu').hidden = true;
+
+    var stale = Store.all().filter(function (b) {
+      return b.isbn && (!b.cover || !b.pages || !b.authors.length || b.title === 'Unknown title');
+    });
+    if (!stale.length) { UI.toast('Everything already has its details'); return; }
+
+    UI.toast('Looking up ' + stale.length + (stale.length === 1 ? ' book…' : ' books…'));
+    var found = 0, done = 0;
+
+    /* One at a time, with a breath between: this is someone else's
+       free service and a shelf of 200 books shouldn't hammer it. */
+    (function next(i) {
+      if (i >= stale.length) {
+        UI.renderAll();
+        UI.toast(found ? 'Updated ' + found + ' of ' + stale.length : 'No new details found');
+        return;
+      }
+      var book = stale[i];
+      Lookup.byISBN(book.isbn)
+        .then(function (data) {
+          if (data && data.title) {
+            var patch = { cover: data.cover || book.cover };
+            if (book.title === 'Unknown title' && data.title) patch.title = data.title;
+            if (!book.authors.length && data.authors.length) patch.authors = data.authors;
+            if (!book.pages && data.pages) patch.pages = data.pages;
+            if (!book.year && data.year) patch.year = data.year;
+            if (!book.publisher && data.publisher) patch.publisher = data.publisher;
+            if (!book.subjects.length && data.subjects.length) patch.subjects = data.subjects.slice(0, 6);
+            if (patch.pages || patch.title) {
+              var size = Store.dimensions(patch.title || book.title,
+                                          patch.authors || book.authors,
+                                          patch.pages || book.pages);
+              patch.widthPx = size.widthPx;
+              patch.heightPx = size.heightPx;
+            }
+            Store.update(book.id, patch);
+            if (patch.cover && patch.cover !== book.cover) found++;
+            else if (patch.title || patch.authors) found++;
+          }
+        })
+        .catch(function () { /* offline or unreachable: try the rest anyway */ })
+        .then(function () {
+          done++;
+          if (done % 5 === 0) { UI.renderAll(); UI.toast('Looked up ' + done + ' of ' + stale.length + '…'); }
+          setTimeout(function () { next(i + 1); }, 220);
+        });
+    })(0);
   });
 
   el('btn-export').addEventListener('click', function () {

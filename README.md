@@ -66,10 +66,15 @@ own, **Want to Read** for what you don't yet.
   out automatically, and you set how big it stands. There are drawn ornaments too
   (plant, globe, cat, candle and so on) if you haven't got a photo to hand. Tap an
   ornament on the shelf to resize it, move it along, or take it away.
+- **Covers** — the shelf button toggles between spines and books stood face-out
+  showing their real cover.
 - **Catalog** — cover art in a grid, two up, with title and author beneath. Real
   covers where they exist; where they don't, a drawn one in the book's own colour.
   The toggle beside the sort menu swaps to a formal list: title, author, publisher,
   year, length. Both are searchable and sortable four ways.
+- **Missing details** — if a book came in bare (added while offline, or before the
+  lookup improved), **⋯ → Find missing covers & details** goes back over the shelf
+  and fills in what it can.
 - **Book details** — mark it Unread / Reading / Read, rate it, move it between
   collections, change the spine colour, keep notes. Books marked *Reading* get a
   gold ribbon on the shelf.

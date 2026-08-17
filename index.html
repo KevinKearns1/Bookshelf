@@ -44,10 +44,17 @@
     <div class="bookcase">
       <div class="shelf-wrap" id="shelf-wrap"></div>
     </div>
-    <button class="decorate-btn" id="btn-decorate">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 4.3 4.6.5-3.4 3.2.9 4.6L12 13.4 8 15.6l.9-4.6L5.5 7.8l4.6-.5z"/></svg>
-      Decorate
-    </button>
+    <div class="shelf-tools" id="shelf-tools">
+      <button class="decorate-btn" id="btn-decorate">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 4.3 4.6.5-3.4 3.2.9 4.6L12 13.4 8 15.6l.9-4.6L5.5 7.8l4.6-.5z"/></svg>
+        Decorate
+      </button>
+      <button class="decorate-btn" id="btn-shelf-mode" aria-label="Show covers instead of spines">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-spines"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-covers"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 15l4-4 4 4 3-3 5 5"/></svg>
+        <span class="mode-label">Covers</span>
+      </button>
+    </div>
     <div class="empty" id="empty-shelf" hidden>
       <svg viewBox="0 0 120 90" class="empty-art" aria-hidden="true">
         <rect x="14" y="20" width="14" height="52" rx="2"/>
@@ -251,6 +258,7 @@
     <h3>Bookshelf</h3>
     <div class="modal-scroll">
       <button class="menu-item" id="btn-add-manual">Add a book by hand</button>
+      <button class="menu-item" id="btn-refresh">Find missing covers &amp; details</button>
       <button class="menu-item" id="btn-export">Export library (.json)</button>
       <button class="menu-item" id="btn-import">Import library…</button>
       <button class="menu-item danger" id="btn-clear">Delete every book</button>

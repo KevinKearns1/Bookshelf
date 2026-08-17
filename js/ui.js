@@ -9,8 +9,29 @@ var UI = (function () {
   var openId = null;
   var collection = 'owned';          // 'owned' | 'wishlist'
   var layout = 'grid';               // catalogue: 'grid' | 'list'
+  var shelfMode = 'spines';          // shelf: 'spines' | 'covers'
 
   function el(id) { return document.getElementById(id); }
+
+  /* Cover art comes from several places and any of them may 404, so an
+     <img> carries the remaining candidates and steps through them on
+     error. When they run out the image removes itself, revealing the
+     drawn cover underneath. */
+  function coverImg(book, extraClass) {
+    var list = Store.coverCandidates(book);
+    if (!list.length) return '';
+    return '<img src="' + esc(list[0]) + '"' +
+           (extraClass ? ' class="' + extraClass + '"' : '') +
+           ' data-more="' + esc(list.slice(1).join('|')) + '"' +
+           ' alt="" loading="lazy" onerror="UI.coverFailed(this)">';
+  }
+
+  function coverFailed(img) {
+    var more = (img.getAttribute('data-more') || '').split('|').filter(Boolean);
+    if (!more.length) { img.remove(); return; }
+    img.setAttribute('data-more', more.slice(1).join('|'));
+    img.src = more[0];
+  }
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -102,8 +123,45 @@ var UI = (function () {
     }
 
     wrap.innerHTML = items.map(function (it) {
-      return it.kind === 'book' ? bookSpine(it.book) : ornament(it.decor);
+      if (it.kind !== 'book') return ornament(it.decor);
+      return shelfMode === 'covers' ? bookFaceOut(it.book) : bookSpine(it.book);
     }).join('');
+  }
+
+  function setShelfMode(mode) {
+    shelfMode = mode === 'covers' ? 'covers' : 'spines';
+    var btn = el('btn-shelf-mode');
+    if (btn) {
+      btn.classList.toggle('showing-covers', shelfMode === 'covers');
+      btn.setAttribute('aria-label', shelfMode === 'covers'
+        ? 'Show spines instead of covers' : 'Show covers instead of spines');
+    }
+    try { localStorage.setItem('bookshelf.shelfMode', shelfMode); } catch (e) {}
+    renderShelf();
+  }
+
+  function toggleShelfMode() { setShelfMode(shelfMode === 'covers' ? 'spines' : 'covers'); }
+
+  /* Face-out: the book stood on the shelf showing its front, for when
+     you want to see what the book actually looks like. */
+  function bookFaceOut(b) {
+    var c = Store.color(b);
+    var pale = Store.isPale(c) ? ' is-pale' : '';
+    var h = Math.round(b.heightPx * 1.05);
+    var w = Math.round(h * 0.66);          // ordinary trade-paperback proportions
+    var author = authorsOf(b);
+    var ribbon = b.status === 'reading' ? '<span class="ribbon"></span>' : '';
+
+    return '<button class="book faceout" data-id="' + b.id + '" style="--w:' + w + 'px;--h:' + h + 'px;--c:' + c + '"' +
+             ' aria-label="' + esc(b.title + (author ? ', ' + author : '')) + '">' +
+             '<span class="faceout-cover">' +
+               '<span class="cover-drawn' + pale + '">' +
+                 '<span class="cover-title">' + esc(b.title) + '</span>' +
+                 (author ? '<span class="cover-author">' + esc(author) + '</span>' : '') +
+               '</span>' +
+               coverImg(b) + ribbon +
+             '</span>' +
+           '</button>';
   }
 
   function bookSpine(b) {
@@ -242,7 +300,6 @@ var UI = (function () {
   /* A real cover when one exists, otherwise a drawn one in the book's
      own cloth colour — the grid stays even either way. */
   function coverCard(b) {
-    var url = Store.coverUrl(b);
     var c = Store.color(b);
     var pale = Store.isPale(c) ? ' is-pale' : '';
     var author = authorsOf(b);
@@ -252,10 +309,8 @@ var UI = (function () {
                 (author ? '<span class="cover-author">' + esc(author) + '</span>' : '') +
               '</span>';
 
-    /* The drawn cover sits underneath; a real image simply covers it,
-       and removes itself if the fetch fails. */
-    var img = url ? '<img src="' + esc(url) + '" alt="" loading="lazy" ' +
-                    'onerror="this.remove()">' : '';
+    /* The drawn cover sits underneath; real art simply covers it. */
+    var img = coverImg(b);
 
     var badge = b.status === 'read' ? '<span class="cover-badge read">Read</span>'
               : b.status === 'reading' ? '<span class="cover-badge reading">Reading</span>' : '';
@@ -305,13 +360,14 @@ var UI = (function () {
 
     var subjects = (b.subjects || []).slice(0, 4).join(', ');
     var added = new Date(b.addedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-    var url = Store.coverUrl(b);
-
     var html =
       '<div class="detail-head">' +
-        (url
-          ? '<img class="detail-cover" src="' + esc(url) + '" alt="" onerror="this.className=\'detail-spine\';this.removeAttribute(\'src\')" style="--c:' + Store.color(b) + '">'
-          : '<div class="detail-spine" style="--c:' + Store.color(b) + '"></div>') +
+        '<div class="detail-art" style="--c:' + Store.color(b) + '">' +
+          '<span class="cover-drawn' + (Store.isPale(Store.color(b)) ? ' is-pale' : '') + '">' +
+            '<span class="cover-title">' + esc(b.title) + '</span>' +
+          '</span>' +
+          coverImg(b) +
+        '</div>' +
         '<div>' +
           '<h2 class="detail-title">' + esc(b.title) + '</h2>' +
           (b.subtitle ? '<p class="detail-sub">' + esc(b.subtitle) + '</p>' : '') +
@@ -411,8 +467,8 @@ var UI = (function () {
       var i = +btn.dataset.i;
       Store.update(b.id, { colorIndex: i });
       [].forEach.call(this.children, function (c) { c.classList.toggle('is-on', c === btn); });
-      var spine = el('sheet-body').querySelector('.detail-spine');
-      if (spine) spine.style.setProperty('--c', Store.PALETTE[i]);
+      var art = el('sheet-body').querySelector('.detail-art');
+      if (art) art.style.setProperty('--c', Store.PALETTE[i]);
       renderAll();
     });
 
@@ -443,9 +499,10 @@ var UI = (function () {
   }
 
   return {
-    hooks: hooks, el: el, esc: esc, toast: toast,
+    hooks: hooks, el: el, esc: esc, toast: toast, coverFailed: coverFailed,
     setView: setView, setCollection: setCollection, getCollection: getCollection,
     setLayout: setLayout, toggleLayout: toggleLayout,
+    setShelfMode: setShelfMode, toggleShelfMode: toggleShelfMode,
     renderAll: renderAll, renderCatalog: renderCatalog,
     openDetail: openDetail, closeSheet: closeSheet, authorsOf: authorsOf
   };
