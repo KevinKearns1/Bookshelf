@@ -6,7 +6,7 @@
    Bump CACHE when you change any file in SHELL.
    ============================================================ */
 
-var CACHE = 'bookshelf-v6';
+var CACHE = 'bookshelf-v7';
 
 var SHELL = [
   './',

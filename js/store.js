@@ -190,13 +190,27 @@ var Store = (function () {
     return (0.299 * r + 0.587 * g + 0.114 * b) > 165;
   }
 
-  /* Open Library serves cover art straight off the ISBN. default=false
-     makes a missing cover a 404 instead of a blank placeholder image,
-     which is what lets the drawn fallback take over. */
+  /* Every place a cover for this book might live, best first. The
+     stored one comes from the lookup; the ISBN endpoints are tried
+     after it because they sometimes hold an image even when the
+     catalogue record claims there is none. default=false turns a
+     missing cover into a 404 rather than a blank grey placeholder,
+     which is what lets the next candidate — and ultimately the drawn
+     cover — take over. */
+  function coverCandidates(book) {
+    var list = [];
+    if (book.cover) list.push(book.cover);
+    if (book.isbn) {
+      var base = 'https://covers.openlibrary.org/b/isbn/' + book.isbn;
+      list.push(base + '-L.jpg?default=false');
+      list.push(base + '-M.jpg?default=false');
+    }
+    return list.filter(function (u, i) { return list.indexOf(u) === i; });
+  }
+
   function coverUrl(book) {
-    if (book.cover) return book.cover;
-    if (book.isbn) return 'https://covers.openlibrary.org/b/isbn/' + book.isbn + '-M.jpg?default=false';
-    return '';
+    var list = coverCandidates(book);
+    return list.length ? list[0] : '';
   }
 
   function totalPages(list) {
@@ -322,7 +336,8 @@ var Store = (function () {
     load: load, save: save, make: make, dimensions: dimensions,
     all: all, count: count, add: add, get: get, update: update,
     remove: remove, clear: clear, findByIsbn: findByIsbn,
-    color: color, isPale: isPale, coverUrl: coverUrl, totalPages: totalPages,
+    color: color, isPale: isPale, coverUrl: coverUrl,
+    coverCandidates: coverCandidates, totalPages: totalPages,
     decorAll: decorAll, decorAdd: decorAdd, decorGet: decorGet,
     decorUpdate: decorUpdate, decorRemove: decorRemove,
     shelfItems: shelfItems, shift: shift,
