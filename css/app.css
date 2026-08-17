@@ -79,7 +79,7 @@ body {
   z-index: 0;                /* not -1: see below */
   pointer-events: none;
   background: #000 url("../img/stars.svg") repeat top center;
-  background-size: 500px 760px;
+  background-size: 600px 900px;   /* the tile's own size: stars stay the size they were drawn */
 }
 
 /* z-index 0 rather than -1, and the content lifted to 1, so the order
