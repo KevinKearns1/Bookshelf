@@ -198,6 +198,12 @@ var Store = (function () {
      which is what lets the next candidate — and ultimately the drawn
      cover — take over. */
   function coverCandidates(book) {
+    /* Once every candidate has been tried and failed, stop asking on
+       every render — otherwise the book flashes its drawn cover while
+       two known-dead URLs 404 again. "Find missing covers & details"
+       clears this to try afresh. */
+    if (book.noCover) return [];
+
     var list = [];
     if (book.cover) list.push(book.cover);
     if (book.isbn) {

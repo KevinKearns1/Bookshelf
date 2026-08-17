@@ -17,20 +17,45 @@ var UI = (function () {
      <img> carries the remaining candidates and steps through them on
      error. When they run out the image removes itself, revealing the
      drawn cover underneath. */
+  /* The first handful are fetched eagerly — they are the ones on
+     screen, and waiting for a lazy-load to trigger is the difference
+     between "the covers are there" and "the covers appear". */
+  var eagerBudget = 0;
+
   function coverImg(book, extraClass) {
     var list = Store.coverCandidates(book);
     if (!list.length) return '';
+    var eager = eagerBudget-- > 0;
     return '<img src="' + esc(list[0]) + '"' +
            (extraClass ? ' class="' + extraClass + '"' : '') +
+           ' data-book="' + book.id + '"' +
            ' data-more="' + esc(list.slice(1).join('|')) + '"' +
-           ' alt="" loading="lazy" onerror="UI.coverFailed(this)">';
+           ' alt="" decoding="async" loading="' + (eager ? 'eager' : 'lazy') + '"' +
+           ' onload="UI.coverLoaded(this)" onerror="UI.coverFailed(this)">';
+  }
+
+  /* Remember the URL that actually worked, so the next render starts
+     with it instead of walking the candidate list again. */
+  function coverLoaded(img) {
+    var id = img.getAttribute('data-book');
+    var book = id && Store.get(id);
+    if (!book) return;
+    var url = img.getAttribute('src');
+    if (url && book.cover !== url) Store.update(id, { cover: url, noCover: false });
   }
 
   function coverFailed(img) {
     var more = (img.getAttribute('data-more') || '').split('|').filter(Boolean);
-    if (!more.length) { img.remove(); return; }
-    img.setAttribute('data-more', more.slice(1).join('|'));
-    img.src = more[0];
+    if (more.length) {
+      img.setAttribute('data-more', more.slice(1).join('|'));
+      img.src = more[0];
+      return;
+    }
+    /* Nothing left to try: note it, so this book stops probing dead
+       URLs on every single render. */
+    var id = img.getAttribute('data-book');
+    if (id && Store.get(id)) Store.update(id, { noCover: true, cover: '' });
+    img.remove();
   }
 
   function esc(s) {
@@ -122,6 +147,7 @@ var UI = (function () {
         : '<h2>Your shelf is empty</h2><p>Tap <strong>Scan</strong> and point the camera at the barcode on the back of a book.</p>';
     }
 
+    resetEagerBudget();
     wrap.innerHTML = items.map(function (it) {
       if (it.kind !== 'book') return ornament(it.decor);
       return shelfMode === 'covers' ? bookFaceOut(it.book) : bookSpine(it.book);
@@ -294,6 +320,7 @@ var UI = (function () {
     el('empty-list').hidden = shown.length > 0;
     el('empty-list').innerHTML = '<h2>Nothing here</h2><p>No books match that search.</p>';
 
+    resetEagerBudget();
     el('catalog').innerHTML = shown.map(layout === 'grid' ? coverCard : listRow).join('');
   }
 
@@ -344,6 +371,8 @@ var UI = (function () {
     renderShelf();
     renderCatalog();
   }
+
+  function resetEagerBudget() { eagerBudget = 8; }
 
   /* ── detail sheet ───────────────────────────────────────────── */
 
@@ -499,7 +528,8 @@ var UI = (function () {
   }
 
   return {
-    hooks: hooks, el: el, esc: esc, toast: toast, coverFailed: coverFailed,
+    hooks: hooks, el: el, esc: esc, toast: toast,
+    coverFailed: coverFailed, coverLoaded: coverLoaded,
     setView: setView, setCollection: setCollection, getCollection: getCollection,
     setLayout: setLayout, toggleLayout: toggleLayout,
     setShelfMode: setShelfMode, toggleShelfMode: toggleShelfMode,

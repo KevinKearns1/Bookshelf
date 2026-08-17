@@ -465,6 +465,12 @@
   el('btn-refresh').addEventListener('click', function () {
     el('modal-menu').hidden = true;
 
+    /* Clear the "no cover exists" flag first, so books written off
+       earlier get another go — the catalogue gains art over time. */
+    Store.all().forEach(function (b) {
+      if (b.noCover) Store.update(b.id, { noCover: false });
+    });
+
     var stale = Store.all().filter(function (b) {
       return b.isbn && (!b.cover || !b.pages || !b.authors.length || b.title === 'Unknown title');
     });
