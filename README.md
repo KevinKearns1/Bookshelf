@@ -97,7 +97,9 @@ what's in the folder is what runs.
 | `js/ui.js` | Rendering the shelf, catalog and detail sheet |
 | `js/app.js` | Wiring it together |
 | `sw.js` | Offline caching |
+| `img/stars.svg` | The night sky behind the bookcase (generated) |
 | `tools/make_icons.py` | Regenerates the app icons |
+| `tools/make_stars.py` | Regenerates the night sky |
 
 ### About the barcode reader
 
