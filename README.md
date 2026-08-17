@@ -100,6 +100,7 @@ what's in the folder is what runs.
 | `img/stars.svg` | The night sky behind the bookcase (generated) |
 | `tools/make_icons.py` | Regenerates the app icons |
 | `tools/make_stars.py` | Regenerates the night sky |
+| `tools/preview_stars.py` | Renders that sky to a PNG so it can be eyeballed |
 
 ### About the barcode reader
 
