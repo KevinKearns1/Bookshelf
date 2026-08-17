@@ -6,7 +6,7 @@
    Bump CACHE when you change any file in SHELL.
    ============================================================ */
 
-var CACHE = 'bookshelf-v4';
+var CACHE = 'bookshelf-v5';
 
 var SHELL = [
   './',
@@ -20,6 +20,7 @@ var SHELL = [
   './js/scanner.js',
   './js/ui.js',
   './js/app.js',
+  './img/stars.svg',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'

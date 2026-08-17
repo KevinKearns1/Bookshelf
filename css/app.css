@@ -50,14 +50,43 @@ html, body {
   height: 100%;
 }
 
+/* The black belongs on <html>, not on <body>. A negative z-index layer
+   (.sky) paints above the root element's background but *below* the
+   backgrounds of ordinary in-flow blocks — so a background on <body>
+   would bury the stars. */
+html { background: var(--bg); }
+
 body {
-  background: var(--bg);
+  background: transparent;
   color: var(--ink);
   font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
+
+/* ── The sky ────────────────────────────────────────────────────
+   A fixed layer behind everything, so the stars stay put while the
+   shelves scroll over them — the sky doesn't move when you walk past
+   a bookcase. Because it never scrolls, the tile only ever has to
+   cover one screen, so the repeat is invisible on a phone; it is
+   drawn to wrap seamlessly regardless, for wide screens.
+   ---------------------------------------------------------------- */
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;                /* not -1: see below */
+  pointer-events: none;
+  background: #000 url("../img/stars.svg") repeat top center;
+  background-size: 500px 760px;
+}
+
+/* z-index 0 rather than -1, and the content lifted to 1, so the order
+   here is the plain "positioned elements stack by z-index" rule. At -1
+   the sky would depend on <body> having no background of its own to
+   paint over it, which is a quiet trap for whoever edits this next. */
+.views { position: relative; z-index: 1; }
 
 h1, h2, h3 { margin: 0; font-weight: 600; }
 
@@ -73,7 +102,9 @@ button { cursor: pointer; }
   top: 0;
   z-index: 20;
   padding: calc(var(--safe-t) + 14px) 18px 0;
-  background: linear-gradient(var(--bg) 78%, transparent);
+  /* Not quite opaque, so the sky carries on behind the title rather
+     than being cut off by a black band. */
+  background: linear-gradient(rgba(0,0,0,.88) 72%, rgba(0,0,0,0));
   backdrop-filter: blur(6px);
 }
 
