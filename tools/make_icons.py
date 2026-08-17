@@ -14,10 +14,10 @@ import zlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(os.path.dirname(HERE), "icons")
 
-WOOD_DARK = (0x3E, 0x2A, 0x1C)
-WOOD      = (0x8B, 0x5E, 0x3C)
-WOOD_LIP  = (0xA9, 0x76, 0x4E)
-GOLD      = (0xD9, 0xA4, 0x41)
+WOOD_DARK = (0x00, 0x00, 0x00)      # icon ground: black, to match the app
+WOOD      = (0x3D, 0x2E, 0x23)
+WOOD_LIP  = (0x57, 0x42, 0x2F)
+GOLD      = (0xD6, 0xA6, 0x4A)
 BOOKS = [(0x8C, 0x2F, 0x39), (0xD9, 0xA4, 0x41), (0x2F, 0x60, 0x70), (0x6F, 0x7F, 0x4F)]
 
 
@@ -93,8 +93,8 @@ def draw(size, inset):
     def m(v):                      # map 0..1 art space into the safe area
         return inset + v * (1 - 2 * inset)
 
-    # back panel, slightly lighter than the frame
-    c.rect(m(0.06), m(0.06), m(0.94), m(0.94), (0x55, 0x3A, 0x26), radius=0.03)
+    # back panel, a step out of the black so the case reads as a case
+    c.rect(m(0.06), m(0.06), m(0.94), m(0.94), (0x19, 0x15, 0x12), radius=0.03)
 
     # four spines of assorted height, standing on the plank
     base = m(0.78)
